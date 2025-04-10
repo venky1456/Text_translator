@@ -10,7 +10,7 @@ const handleResponse = async (response) => {
     } else {
       data = await response.text();
     }
-
+    
     console.log('Response status:', response.status);
     console.log('Parsed response data:', data);
 
@@ -41,47 +41,45 @@ const getHeaders = () => ({
 export const api = {
   signup: async (userData) => {
     try {
-      const url = `${BASE_URL}/signupfunction`;
-      console.log('Signup request to:', url);
-
-      const response = await fetch(url, {
+      const response = await fetch(`${BASE_URL}/signupfunction`, {
         method: 'POST',
-        headers: getHeaders(),
-        mode: 'cors',
-        credentials: 'omit',
-        body: JSON.stringify({
-          name: userData.name,
-          email: userData.email,
-          password: userData.password,
-          confirmPassword: userData.confirmPassword,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
       });
 
-      return await handleResponse(response);
+      const responseData = await response.json();
+      
+      if (!response.ok) {
+        if (responseData.message === 'User already exists but not confirmed') {
+          throw new Error('User already exists but not confirmed');
+        }
+        throw new Error(responseData.message || 'Failed to create account');
+      }
+
+      return responseData;
     } catch (error) {
-      console.error('Signup API Error:', error.message);
-      if (!navigator.onLine) {
-        throw new Error('No internet connection. Please check your network and try again.');
-      }
-      if (error.message === 'Failed to fetch') {
-        throw new Error('Unable to connect to the server. Please try again later.');
-      }
+      console.error('Signup error:', error);
       throw error;
     }
   },
-
   confirmSignup: async (confirmationData) => {
+    console.log('Confirm Signup Request Body:', {
+      Username: confirmationData.email,
+      ConfirmationCode: confirmationData.confirmationCode,
+    });
+  
     const response = await fetch(`${BASE_URL}/confirm_signup`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
-        Username: confirmationData.email, // Pass the email as Username
-        ConfirmationCode: confirmationData.confirmationCode, // Pass the code entered by the user
+        Username: confirmationData.email,
+        ConfirmationCode: confirmationData.confirmationCode,
       }),
     });
     return handleResponse(response);
   },
-
   login: async (credentials) => {
     const response = await fetch(`${BASE_URL}/login_lambda`, {
       method: 'POST',
@@ -90,7 +88,18 @@ export const api = {
       },
       body: JSON.stringify(credentials),
     });
-    return response.json();
+  
+    const data = await response.json();
+  
+    if (data.error && data.error.includes('not confirmed')) {
+      return { redirectToResend: true, email: credentials.email };
+    }
+  
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed. Please try again.');
+    }
+  
+    return data;
   },
 
   logout: () => {
@@ -120,6 +129,7 @@ export const api = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`, // Replace with your JWT token
       },
       body: JSON.stringify({
         text: translationData.text, // Text to translate
@@ -134,8 +144,8 @@ export const api = {
       throw new Error(errorData.message || 'Failed to translate text. Please try again.');
     }
   
-    return handleResponse(response);
-  },
+    return response.json();
+  },  
 
   getTranslationHistory: async () => {
     const response = await fetch(`${BASE_URL}/TranslationHistory`, {
@@ -147,4 +157,14 @@ export const api = {
     });
     return handleResponse(response);
   },
-};
+  resendConfirmationCode: async (email) => {
+    const response = await fetch(`${BASE_URL}/Resend_the_Code`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        email: email, // Just the email needed to resend the code
+      }),
+    });
+    return handleResponse(response);
+  },
+};  

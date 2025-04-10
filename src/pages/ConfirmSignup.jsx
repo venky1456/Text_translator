@@ -14,12 +14,14 @@ const ConfirmSignup = () => {
     event.preventDefault();
     setError('');
     setIsLoading(true);
-
+  
     try {
       if (!email || !code) {
         throw new Error('Email or confirmation code is missing.');
       }
-
+  
+      console.log('Signup Request Body:', { Username: email, ConfirmationCode: code });
+  
       await api.confirmSignup({
         email, // Pass the email as Username
         confirmationCode: code, // Pass the code entered by the user

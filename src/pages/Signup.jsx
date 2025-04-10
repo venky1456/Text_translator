@@ -47,53 +47,50 @@ const Signup = () => {
 
     return true;
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
+  
     if (!validateForm()) {
       setIsLoading(false);
       return;
     }
-
+  
     try {
-      console.log('Submitting signup form:', { ...formData, password: '***' });
-      const response = await api.signup(formData);
-      console.log('Signup response:', response);
+      // Log form submission data (excluding password)
+      console.log('Submitting form data:', {
+        name: formData.name,
+        email: formData.email,
+        password: '********'
+      });
 
-      if (response) {
-        if (response.message) {
-          // Success case
-          navigate('/confirm-signup', {
-            state: {
-              email: formData.email,
-              message: response.message
-            }
-          });
-        } else if (response.error) {
-          setError(response.error);
-        } else {
-          setError('Unexpected server response. Please try again.');
-        }
+      const response = await api.signup(formData);
+      console.log('API Response:', response);
+
+      if (response.message === 'User already exists but not confirmed') {
+        // Redirect to resend verification page with email
+        navigate('/resend-verification', { state: { email: formData.email } });
+        return;
+      }
+
+      if (response.message === 'User created successfully') {
+        navigate('/verify-email', { state: { email: formData.email } });
       } else {
-        setError('No response from server.');
+        setError(response.message || 'Failed to create account');
       }
     } catch (err) {
       console.error('Signup error:', err);
-      if (err.message.includes('connect')) {
-        setError('Server connection failed. Please check your internet.');
-      } else if (err.message.includes('already exists')) {
-        setError('Email already registered. Try logging in.');
-      } else {
-        setError(err.message || 'Signup failed. Please try again later.');
+      if (err.message === 'User already exists but not confirmed') {
+        // Redirect to resend verification page with email
+        navigate('/resend-verification', { state: { email: formData.email } });
+        return;
       }
+      setError(err.message || 'Failed to create account');
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow-lg">

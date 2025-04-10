@@ -23,24 +23,23 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
+  
     try {
       const response = await api.login(formData);
-
-      if (response.token) {
-        // Save the token in localStorage
-        localStorage.setItem('token', response.token);
-
-        // Redirect to the Dashboard page
-        navigate('/dashboard');
+  
+      if (response.redirectToResend) {
+        // Redirect to the Resend Verification Email page
+        navigate('/resend-verification', {
+          state: { email: response.email },
+        });
       } else {
-        // Handle invalid credentials or other errors
-        setError(response.message || 'Invalid email or password. Please try again.');
+        // Save the token and redirect to the dashboard
+        localStorage.setItem('token', response.token);
+        navigate('/dashboard');
       }
     } catch (err) {
-      // Handle unexpected errors
-      setError('An error occurred. Please try again later.');
-      console.error('Login error:', err.message);
+      console.error('Login error:', err);
+      setError(err.message || 'Login failed. Please try again later.');
     } finally {
       setIsLoading(false);
     }

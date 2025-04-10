@@ -25,13 +25,15 @@ const History = () => {
 
     try {
       const response = await api.getTranslationHistory();
-      
-      if (response.translations) {
-        setTranslations(response.translations);
+      console.log('API Response:', response); // Debugging
+
+      if (response.history && Array.isArray(response.history)) {
+        setTranslations(response.history);
       } else {
         setError(response.message || 'Failed to fetch translation history.');
       }
     } catch (err) {
+      console.error('Error fetching translation history:', err);
       setError('An error occurred while fetching translation history.');
     } finally {
       setIsLoading(false);
@@ -47,11 +49,11 @@ const History = () => {
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       <div className="flex">
         <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-        
+
         <main className="flex-1 p-8">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold mb-8 text-foreground">Translation History</h1>
-            
+
             {error && (
               <div className="text-red-500 text-sm mb-4">
                 {error}
@@ -72,21 +74,21 @@ const History = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <h3 className="text-sm font-medium text-muted-foreground">Source Text</h3>
-                        <p className="mt-1 text-foreground">{translation.sourceText}</p>
+                        <p className="mt-1 text-foreground">{translation.original_text}</p>
                         <p className="text-sm text-muted-foreground mt-2">
-                          From: {translation.sourceLanguage}
+                          From: {translation.source_lang}
                         </p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-muted-foreground">Translation</h3>
-                        <p className="mt-1 text-foreground">{translation.translatedText}</p>
+                        <p className="mt-1 text-foreground">{translation.translated_text}</p>
                         <p className="text-sm text-muted-foreground mt-2">
-                          To: {translation.targetLanguage}
+                          To: {translation.target_lang}
                         </p>
                       </div>
                     </div>
                     <div className="mt-2 text-sm text-muted-foreground">
-                      Translated on: {new Date(translation.timestamp).toLocaleString()}
+                      Translated on: {new Date(translation.timestamp * 1000).toLocaleString()}
                     </div>
                   </div>
                 ))}
@@ -103,4 +105,4 @@ const History = () => {
   );
 };
 
-export default History; 
+export default History;
