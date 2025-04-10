@@ -58,7 +58,6 @@ const Signup = () => {
     }
   
     try {
-      // Log form submission data (excluding password)
       console.log('Submitting form data:', {
         name: formData.name,
         email: formData.email,
@@ -68,22 +67,23 @@ const Signup = () => {
       const response = await api.signup(formData);
       console.log('API Response:', response);
 
-      if (response.message === 'User already exists but not confirmed') {
+      if (response.message === 'User already exists but not confirmed' || 
+          response.message === 'Please verify your email to activate your account.') {
         // Redirect to resend verification page with email
-        navigate('/resend-verification', { state: { email: formData.email } });
+        navigate('/Resend_the_Code', { state: { email: formData.email } });
         return;
       }
 
       if (response.message === 'User created successfully') {
-        navigate('/verify-email', { state: { email: formData.email } });
+        navigate('/Resend_the_Code', { state: { email: formData.email } });
       } else {
         setError(response.message || 'Failed to create account');
       }
     } catch (err) {
       console.error('Signup error:', err);
-      if (err.message === 'User already exists but not confirmed') {
-        // Redirect to resend verification page with email
-        navigate('/resend-verification', { state: { email: formData.email } });
+      if (err.message === 'User already exists but not confirmed' || 
+          err.message === 'Please verify your email to activate your account.') {
+        navigate('/Resend_the_Code', { state: { email: formData.email } });
         return;
       }
       setError(err.message || 'Failed to create account');

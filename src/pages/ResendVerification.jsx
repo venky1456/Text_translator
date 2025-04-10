@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
 const ResendVerification = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [email, setEmail] = useState(location.state?.email || '');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -17,14 +18,20 @@ const ResendVerification = () => {
 
     try {
       const response = await api.resendConfirmationCode(email);
+      console.log('Resend verification response:', response);
 
-      if (response.success) {
-        setSuccess('Verification email has been resent. Please check your inbox.');
+      if (response.message === 'Confirmation code resent successfully') {
+        setSuccess('Verification code has been resent to your email');
+        // Redirect to confirm-signup after a short delay
+        setTimeout(() => {
+          navigate('/confirm-signup', { state: { email } });
+        }, 2000);
       } else {
-        setError(response.message || 'Failed to resend verification email. Please try again.');
+        setError(response.message || 'Failed to resend verification code');
       }
     } catch (err) {
-      setError('An error occurred. Please try again later.');
+      console.error('Resend verification error:', err);
+      setError(err.message || 'Failed to resend verification code');
     } finally {
       setIsLoading(false);
     }
@@ -35,11 +42,8 @@ const ResendVerification = () => {
       <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow-lg">
         <div>
           <h2 className="mt-6 text-3xl font-bold text-center text-foreground">
-            Resend Verification Email
+            Resend Verification Code
           </h2>
-          <p className="mt-2 text-center text-sm text-muted-foreground">
-            Enter your email address to resend the verification email.
-          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
@@ -52,29 +56,33 @@ const ResendVerification = () => {
               {success}
             </div>
           )}
-          <div>
-            <label htmlFor="email" className="sr-only">
-              Email address
-            </label>
+          <div className="space-y-4">
             <input
               id="email"
               name="email"
               type="email"
               required
-              className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="rounded-lg w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
 
-          <div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2 px-4 text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Resending...' : 'Resend Verification Code'}
+          </button>
+
+          <div className="text-sm text-center">
             <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => navigate('/login')}
+              className="text-primary hover:text-primary/90"
             >
-              {isLoading ? 'Resending...' : 'Resend Verification Email'}
+              Back to Login
             </button>
           </div>
         </form>
