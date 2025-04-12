@@ -7,8 +7,10 @@ const History = () => {
   const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [history, setHistory] = useState([]);
+  const [filteredHistory, setFilteredHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -23,23 +25,20 @@ const History = () => {
     try {
       setLoading(true);
       setError('');
-      
-      console.log('Fetching translation history...');
       const response = await api.getTranslationHistory();
-      console.log('Translation history data:', response);
-
-      if (response && response.translations) {
-        console.log('Setting history with translations:', response.translations);
-        setHistory(response.translations);
+      if (response && Array.isArray(response)) {
+        setHistory(response);
+        setFilteredHistory(response);
       } else {
-        console.log('No translations found in response');
         setHistory([]);
+        setFilteredHistory([]);
       }
     } catch (err) {
-      console.error('Error fetching translation history:', err);
-      if (err.message.includes('Session expired') || 
-          err.message.includes('No authentication token') ||
-          err.message === 'Unauthorized') {
+      if (
+        err.message.includes('Session expired') ||
+        err.message.includes('No authentication token') ||
+        err.message === 'Unauthorized'
+      ) {
         navigate('/login');
         return;
       }
@@ -49,13 +48,26 @@ const History = () => {
     }
   };
 
-  const handleRetry = () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
+  const handleDelete = async (id) => {
+    try {
+      await api.deleteTranslation(id); // Call the API to delete the translation
+      setHistory((prevHistory) => prevHistory.filter((item) => item.id !== id)); // Remove the deleted item from the state
+      setFilteredHistory((prevHistory) => prevHistory.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error('Error deleting translation:', err);
+      setError('Failed to delete translation. Please try again.');
     }
-    fetchTranslationHistory();
+  };
+
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+    const filtered = history.filter(
+      (item) =>
+        item.original_text.toLowerCase().includes(query) ||
+        item.translated_text.toLowerCase().includes(query)
+    );
+    setFilteredHistory(filtered);
   };
 
   const toggleDarkMode = () => {
@@ -63,72 +75,92 @@ const History = () => {
     document.documentElement.classList.toggle('dark');
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-lg text-foreground">Loading translation history...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="max-w-md w-full p-8 bg-card rounded-lg shadow-lg">
-          <div className="text-red-500 text-center mb-4">{error}</div>
-          <button
-            onClick={handleRetry}
-            className="w-full py-2 px-4 text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-          >
-            Retry
-          </button>
-          <button
-            onClick={() => navigate('/login')}
-            className="w-full mt-2 py-2 px-4 text-sm font-medium rounded-lg text-primary border border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-          >
-            Back to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       <div className="flex">
         <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
 
         <main className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8 text-foreground">Translation History</h1>
+          <div className="max-w-6xl mx-auto space-y-6">
+            <h1 className="text-3xl font-bold text-foreground">Translation History</h1>
+            <p className="text-gray-500">View and manage your previous translations</p>
 
-            {history.length === 0 ? (
-              <div className="text-center text-muted-foreground">
-                No translation history found.
+            {error && (
+              <div className="p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
+                {error}
               </div>
+            )}
+
+            <div className="flex justify-between items-center mb-4">
+              <input
+                type="text"
+                placeholder="Search translations..."
+                value={searchQuery}
+                onChange={handleSearch}
+                className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {loading ? (
+              <div className="text-center py-4">Loading history...</div>
+            ) : filteredHistory.length === 0 ? (
+              <div className="text-center py-4 text-gray-500">No translation history found</div>
             ) : (
-              <div className="space-y-4">
-                {history.map((item, index) => (
-                  <div key={index} className="p-4 bg-card rounded-lg shadow-md">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Original Text</h3>
-                        <p className="mt-1 text-foreground">{item.originalText}</p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Translated Text</h3>
-                        <p className="mt-1 text-foreground">{item.translatedText}</p>
-                      </div>
-                      <div className="col-span-1 md:col-span-2">
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>From: {item.fromLanguage}</span>
-                          <span>To: {item.toLanguage}</span>
-                          <span>{new Date(item.timestamp).toLocaleString()}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-background border border-input rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-100 dark:bg-gray-800">
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
+                        Original Text
+                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
+                        Translated Text
+                      </th>
+                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
+                        Languages
+                      </th>
+                      <th className="px-6 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredHistory.map((item) => (
+                      <tr key={item.id} className="border-t border-input">
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {item.original_text}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {item.translated_text}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                          {item.source_lang} → {item.target_lang}
+                        </td>
+                        <td className="px-6 py-4 text-center space-x-2">
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                              className="w-6 h-6 inline-block"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19.5 9l-1.5 10.5a2.25 2.25 0 01-2.25 2.25H8.25a2.25 2.25 0 01-2.25-2.25L4.5 9m15 0H4.5m15 0l-.75-3.75A2.25 2.25 0 0016.5 3h-9a2.25 2.25 0 00-2.25 2.25L4.5 9m15 0H4.5"
+                              />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>

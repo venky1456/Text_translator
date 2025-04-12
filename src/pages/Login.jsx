@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 const Login = () => {
+  const { isDarkMode } = useTheme();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -23,17 +25,15 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-  
+
     try {
       const response = await api.login(formData);
-  
+
       if (response.redirectToResend) {
-        // Redirect to the Resend Verification Email page
         navigate('/resend-verification', {
           state: { email: response.email },
         });
       } else {
-        // Save the token and redirect to the dashboard
         localStorage.setItem('token', response.token);
         navigate('/dashboard');
       }
@@ -44,76 +44,54 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow-lg">
-        <div>
-          <h2 className="mt-6 text-3xl font-bold text-center text-foreground">
-            Sign in to your account
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 transition-colors duration-200">
+      <div className="max-w-md w-full bg-white dark:bg-gray-800 text-blue-900 dark:text-white p-8 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+        <h2 className="text-3xl font-bold text-center mb-6">
+          Sign in to your account
+        </h2>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {error && (
-            <div className="text-red-500 text-sm text-center">
+            <div className="text-red-600 dark:text-red-400 text-sm text-center bg-red-50 dark:bg-red-900/10 p-3 rounded-lg">
               {error}
             </div>
           )}
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Email address"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link to="/forgot-password" className="font-medium text-primary hover:text-primary/90">
-                Forgot your password?
-              </Link>
-            </div>
-            <div className="text-sm">
-              <Link to="/signup" className="font-medium text-primary hover:text-primary/90">
-                Don't have an account? Sign up
-              </Link>
-            </div>
-          </div>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            required
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+          />
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? 'Signing in...' : 'Login'}
+          </button>
         </form>
+
+        <div className="mt-4 flex justify-between text-sm">
+          <Link to="/forgot-password" className="text-blue-600 dark:text-blue-400 hover:underline">
+            Forgot your password?
+          </Link>
+          <Link to="/signup" className="text-blue-600 dark:text-blue-400 hover:underline">
+            Don't have an account? Sign up
+          </Link>
+        </div>
       </div>
     </div>
   );

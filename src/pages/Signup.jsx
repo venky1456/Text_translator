@@ -15,9 +15,9 @@ const Signup = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
     }));
   };
 
@@ -47,29 +47,23 @@ const Signup = () => {
 
     return true;
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-  
+
     if (!validateForm()) {
       setIsLoading(false);
       return;
     }
-  
+
     try {
-      console.log('Submitting form data:', {
-        name: formData.name,
-        email: formData.email,
-        password: '********'
-      });
-
       const response = await api.signup(formData);
-      console.log('API Response:', response);
-
-      if (response.message === 'User already exists but not confirmed' || 
-          response.message === 'Please verify your email to activate your account.') {
-        // Redirect to resend verification page with email
+      if (
+        response.message === 'User already exists but not confirmed' ||
+        response.message === 'Please verify your email to activate your account.'
+      ) {
         navigate('/Resend_the_Code', { state: { email: formData.email } });
         return;
       }
@@ -81,8 +75,10 @@ const Signup = () => {
       }
     } catch (err) {
       console.error('Signup error:', err);
-      if (err.message === 'User already exists but not confirmed' || 
-          err.message === 'Please verify your email to activate your account.') {
+      if (
+        err.message === 'User already exists but not confirmed' ||
+        err.message === 'Please verify your email to activate your account.'
+      ) {
         navigate('/Resend_the_Code', { state: { email: formData.email } });
         return;
       }
@@ -91,80 +87,63 @@ const Signup = () => {
       setIsLoading(false);
     }
   };
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="max-w-md w-full space-y-8 p-8 bg-card rounded-lg shadow-lg">
-        <div>
-          <h2 className="mt-6 text-3xl font-bold text-center text-foreground">
-            Create your account
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="text-red-500 text-sm text-center">
-              {error}
-            </div>
-          )}
-          <div className="space-y-4">
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleChange}
-              className="rounded-lg w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              placeholder="Email address"
-              value={formData.email}
-              onChange={handleChange}
-              className="rounded-lg w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className="rounded-lg w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="rounded-lg w-full px-3 py-2 border border-input bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-          </div>
 
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+      <div className="max-w-md w-full bg-white text-blue-900 p-8 rounded-lg shadow-lg">
+        <h2 className="text-3xl font-bold mb-6 text-center">Sign Up</h2>
+        {error && (
+          <div className="mb-4 text-sm text-red-600 text-center">{error}</div>
+        )}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            className="w-full p-3 border rounded-lg"
+          />
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2 px-4 text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Creating account...' : 'Sign up'}
+            {isLoading ? 'Creating account...' : 'Sign Up'}
           </button>
-
-          <div className="text-sm text-center">
-            <Link to="/login" className="text-primary hover:text-primary/90">
-              Already have an account? Sign in
-            </Link>
-          </div>
         </form>
+        <div className="mt-4 text-center">
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Already have an account? Login
+          </Link>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Signup;  
+export default Signup;

@@ -1,4 +1,4 @@
-const BASE_URL = 'prouduction';
+const BASE_URL = '/prouduction';
 const handleResponse = async (response) => {
   try {
     const contentType = response.headers.get('content-type') || '';
@@ -211,7 +211,7 @@ export const api = {
       throw error;
     }
   },  
-
+  
   getTranslationHistory: async () => {
     try {
       const token = localStorage.getItem('token');
@@ -238,18 +238,20 @@ export const api = {
         throw new Error(responseData.error || 'Failed to fetch translation history');
       }
 
-      // Handle the response format from the new Lambda function
-      if (responseData.translations) {
-        return { translations: responseData.translations };
+      // Return the history array directly if it exists
+      if (responseData.history && Array.isArray(responseData.history)) {
+        return responseData.history;
       }
 
-      return { translations: [] };
-    } catch (error) {
-      console.error('Get translation history error:', error);
-      if (error.message.includes('Session expired') || error.message.includes('No authentication token')) {
-        throw error;
+      // If the response is an array, return it directly
+      if (Array.isArray(responseData)) {
+        return responseData;
       }
-      throw new Error('Failed to fetch translation history. Please try again.');
+
+      return [];
+    } catch (error) {
+      console.error('Error fetching translation history:', error);
+      throw error;
     }
   },
 
@@ -269,11 +271,11 @@ export const api = {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          original_text: translationData.originalText,
-          translated_text: translationData.translatedText,
-          source_lang: translationData.sourceLang,
-          target_lang: translationData.targetLang,
-          timestamp: Date.now()
+          source_text: translationData.originalText,
+          target_text: translationData.translatedText,
+          source_language: translationData.sourceLang,
+          target_language: translationData.targetLang,
+          timestamp: new Date().toISOString()
         })
       });
 
@@ -285,16 +287,19 @@ export const api = {
           localStorage.removeItem('token');
           throw new Error('Session expired. Please login again.');
         }
-        throw new Error(responseData.error || 'Failed to save translation');
+        throw new Error(responseData.message || 'Failed to save translation');
       }
 
       return responseData;
     } catch (error) {
       console.error('Save translation error:', error);
-      if (error.message.includes('Session expired') || error.message.includes('No authentication token')) {
-        throw error;
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network and try again.');
       }
-      throw new Error('Failed to save translation. Please try again.');
+      if (error.message === 'Failed to fetch') {
+        throw new Error('Unable to connect to the server. Please try again later.');
+      }
+      throw error;
     }
   },
 
@@ -320,4 +325,42 @@ export const api = {
       throw error;
     }
   },
-};  
+  getUserDetails: async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found. Please login again.');
+      }
+
+      const response = await fetch(`${BASE_URL}/getUserDetails`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        mode: 'cors',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          throw new Error('Session expired. Please login again.');
+        }
+        throw new Error(errorData.error || 'Failed to fetch user details');
+      }
+
+      const responseData = await response.json();
+      console.log('User details response:', responseData);
+
+      return responseData;
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Unable to connect to the server. Please check your network connection and try again.');
+      }
+      throw error;
+    }
+  }
+}; 

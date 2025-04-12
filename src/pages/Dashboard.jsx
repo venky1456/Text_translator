@@ -11,9 +11,9 @@ const Dashboard = () => {
   const [sourceLanguage, setSourceLanguage] = useState('auto');
   const [targetLanguage, setTargetLanguage] = useState('en');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [translationHistory, setTranslationHistory] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [translationHistory, setTranslationHistory] = useState([]);
+  const [error, setError] = useState('');
 
   const languages = [
     { code: 'auto', name: 'Detect Language' },
@@ -41,8 +41,12 @@ const Dashboard = () => {
       setIsHistoryLoading(true);
       const response = await api.getTranslationHistory();
       console.log('Fetched translation history:', response);
-      if (response.translations) {
+      if (Array.isArray(response)) {
+        setTranslationHistory(response);
+      } else if (response && response.translations) {
         setTranslationHistory(response.translations);
+      } else {
+        setTranslationHistory([]);
       }
     } catch (err) {
       console.error('Failed to fetch translation history:', err);
@@ -69,29 +73,19 @@ const Dashboard = () => {
       setError('');
       setIsLoading(true);
 
-      console.log('Starting translation:', {
-        text: sourceText,
-        source_lang: sourceLanguage,
-        target_lang: targetLanguage
-      });
-
       const result = await api.translate({
         text: sourceText,
         source: sourceLanguage,
         target: targetLanguage
       });
 
-      console.log('Translation result:', result);
-
       if (result.translatedText) {
         setTranslatedText(result.translatedText);
-        
-        // If language was auto-detected, update the source language
+
         if (sourceLanguage === 'auto' && result.sourceLang) {
           setSourceLanguage(result.sourceLang);
         }
 
-        // Save to history
         try {
           await api.saveTranslation({
             originalText: sourceText,
@@ -99,7 +93,6 @@ const Dashboard = () => {
             sourceLang: result.sourceLang || sourceLanguage,
             targetLang: result.targetLang
           });
-          // Refresh history after saving
           await fetchTranslationHistory();
         } catch (saveError) {
           console.error('Failed to save translation history:', saveError);
@@ -124,7 +117,6 @@ const Dashboard = () => {
       const temp = sourceLanguage;
       setSourceLanguage(targetLanguage);
       setTargetLanguage(temp);
-      // Swap the texts as well
       setSourceText(translatedText);
       setTranslatedText(sourceText);
     }
@@ -139,7 +131,7 @@ const Dashboard = () => {
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
       <div className="flex">
         <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-        
+
         <main className="flex-1 p-8">
           <div className="max-w-4xl mx-auto space-y-6">
             <h1 className="text-3xl font-bold text-foreground">Translator</h1>
@@ -205,44 +197,22 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center mt-4">
               <button
                 onClick={handleTranslate}
-                disabled={isLoading || !sourceText.trim()}
-                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
+                disabled={isLoading}
+                className={`px-6 py-3 rounded-lg font-medium text-white ${
+                  isLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+                } transition-colors duration-200 shadow-md`}
               >
                 {isLoading ? 'Translating...' : 'Translate'}
               </button>
             </div>
 
-            {/* Translation History Section */}
-            <div className="mt-8">
-              <h2 className="text-2xl font-semibold text-foreground mb-4">Translation History</h2>
-              {isHistoryLoading ? (
-                <div className="text-center py-4">Loading history...</div>
-              ) : translationHistory.length === 0 ? (
-                <div className="text-center py-4 text-gray-500">No translation history yet</div>
-              ) : (
-                <div className="space-y-4">
-                  {translationHistory.map((item, index) => (
-                    <div key={index} className="p-4 bg-background border border-input rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="text-sm text-gray-500">
-                          {new Date(item.timestamp).toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {item.source_lang} → {item.target_lang}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="font-medium">{item.original_text}</div>
-                        <div className="text-primary">{item.translated_text}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Translation History */}
+      
           </div>
         </main>
       </div>
@@ -251,3 +221,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+///////////////////////////////////////

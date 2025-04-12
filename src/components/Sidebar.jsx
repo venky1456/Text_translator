@@ -1,96 +1,60 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import { api } from '../services/api';
 
-const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
+const Sidebar = () => {
+  const location = useLocation();
   const navigate = useNavigate();
+  const { isDarkMode, toggleDarkMode } = useTheme();
+
+  const navItems = [
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/history', label: 'History', icon: '📜' },
+    { path: '/profile', label: 'Profile', icon: '👤' },
+  ];
+
+  const isActive = (path) => location.pathname === path;
 
   const handleLogout = () => {
-    api.logout();
+    api.logout(); // Optional: remove backend token/logout session
+    localStorage.removeItem('token'); // Remove token from localStorage
+    navigate('/login'); // Navigate to login
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-card border-r border-border p-4">
+    <aside className="w-64 min-h-screen bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-800 border-r border-gray-200 dark:border-gray-700 p-6 transition-all duration-300">
       <div className="flex flex-col h-full">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-foreground">Translator App</h1>
+        <div className="mb-10">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Translator App
+          </h1>
         </div>
 
-        <nav className="flex-1">
-          <ul className="space-y-2">
-            <li>
-              <Link
-                to="/dashboard"
-                className="flex items-center px-4 py-2 text-foreground hover:bg-accent rounded-lg"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-                  />
-                </svg>
-                Dashboard
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/history"
-                className="flex items-center px-4 py-2 text-foreground hover:bg-accent rounded-lg"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                History
-              </Link>
-            </li>
-            <li>
-              <Link
-                to="/profile"
-                className="flex items-center px-4 py-2 text-foreground hover:bg-accent rounded-lg"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-                Profile
-              </Link>
-            </li>
-          </ul>
+        <nav className="flex-1 space-y-3">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center px-4 py-3 rounded-xl transition-all duration-300 ${
+                isActive(item.path)
+                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700/50'
+              }`}
+            >
+              <span className="text-2xl mr-3">{item.icon}</span>
+              <span className="font-medium">{item.label}</span>
+            </Link>
+          ))}
         </nav>
 
         <div className="mt-auto space-y-4">
           <button
             onClick={toggleDarkMode}
-            className="w-full flex items-center px-4 py-2 text-foreground hover:bg-accent rounded-lg"
+            className="w-full flex items-center px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-gray-700/50 rounded-xl transition-all duration-300"
           >
             <svg
-              className="w-5 h-5 mr-2"
+              className="w-6 h-6 mr-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -111,27 +75,17 @@ const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
                 />
               )}
             </svg>
-            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+            <span className="font-medium">
+              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+            </span>
           </button>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center px-4 py-2 text-red-500 hover:bg-red-500/10 rounded-lg"
+            className="w-full flex items-center px-4 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-300"
           >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            Logout
+            <span className="text-2xl mr-3">🚪</span>
+            <span className="font-medium">Logout</span>
           </button>
         </div>
       </div>
@@ -139,4 +93,4 @@ const Sidebar = ({ isDarkMode, toggleDarkMode }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
