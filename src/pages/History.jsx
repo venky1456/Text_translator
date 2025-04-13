@@ -50,8 +50,8 @@ const History = () => {
 
   const handleDelete = async (id) => {
     try {
-      await api.deleteTranslation(id); // Call the API to delete the translation
-      setHistory((prevHistory) => prevHistory.filter((item) => item.id !== id)); // Remove the deleted item from the state
+      await api.deleteTranslation(id);
+      setHistory((prevHistory) => prevHistory.filter((item) => item.id !== id));
       setFilteredHistory((prevHistory) => prevHistory.filter((item) => item.id !== id));
     } catch (err) {
       console.error('Error deleting translation:', err);
@@ -82,64 +82,109 @@ const History = () => {
 
         <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto space-y-6">
-            <h1 className="text-3xl font-bold text-foreground">Translation History</h1>
-            <p className="text-gray-500">View and manage your previous translations</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-foreground bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Translation History
+                </h1>
+                <p className="text-gray-500 mt-2">View and manage your previous translations</p>
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search translations..."
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  className="w-64 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+                           bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100
+                           transition-all duration-200 ease-in-out"
+                />
+                <svg
+                  className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
 
             {error && (
-              <div className="p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg">
+              <div className="p-4 text-red-500 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-200 dark:border-red-800">
                 {error}
               </div>
             )}
 
-            <div className="flex justify-between items-center mb-4">
-              <input
-                type="text"
-                placeholder="Search translations..."
-                value={searchQuery}
-                onChange={handleSearch}
-                className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
             {loading ? (
-              <div className="text-center py-4">Loading history...</div>
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+              </div>
             ) : filteredHistory.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No translation history found</div>
+              <div className="text-center py-12">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-gray-100">No translations found</h3>
+                <p className="mt-1 text-gray-500">Get started by making your first translation</p>
+              </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-background border border-input rounded-lg">
-                  <thead>
-                    <tr className="bg-gray-100 dark:bg-gray-800">
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
+              <div className="overflow-x-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Original Text
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Translated Text
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Languages
                       </th>
-                      <th className="px-6 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300">
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                     {filteredHistory.map((item) => (
-                      <tr key={item.id} className="border-t border-input">
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                      <tr
+                        key={item.id}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150"
+                      >
+                        <td className="px-6 py-4 whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-100">
                           {item.original_text}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
+                        <td className="px-6 py-4 whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-100">
                           {item.translated_text}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">
-                          {item.source_lang} → {item.target_lang}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            {item.source_lang} → {item.target_lang}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 text-center space-x-2">
+                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                           <button
                             onClick={() => handleDelete(item.id)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-600 hover:text-red-800 dark:hover:text-red-400 transition-colors duration-200"
+                            title="Delete translation"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -147,7 +192,7 @@ const History = () => {
                               viewBox="0 0 24 24"
                               strokeWidth={2}
                               stroke="currentColor"
-                              className="w-6 h-6 inline-block"
+                              className="w-5 h-5"
                             >
                               <path
                                 strokeLinecap="round"
